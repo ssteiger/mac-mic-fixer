@@ -1,0 +1,24 @@
+diff --git a/Libraries/Network/RCTDataRequestHandler.mm b/Libraries/Network/RCTDataRequestHandler.mm
+index 3545a0db743fad90e37b538b543b02ee508b1b16..f9914edf955cb56732440c69eafba29162f71beb 100644
+--- a/Libraries/Network/RCTDataRequestHandler.mm
++++ b/Libraries/Network/RCTDataRequestHandler.mm
+@@ -72,6 +72,7 @@ RCT_EXPORT_MODULE()
+     }
+     [delegate URLRequest:weakOp didCompleteWithError:error];
+   }];
++  weakOp = op;
+ 
+   [_queue addOperation:op];
+   return op;
+diff --git a/Libraries/Network/RCTFileRequestHandler.mm b/Libraries/Network/RCTFileRequestHandler.mm
+index 4b0921e0469f7458381f9ad5dab21a846ee9f4b4..ac93cd61cb23a0f0a298331736de8275d7276ccd 100644
+--- a/Libraries/Network/RCTFileRequestHandler.mm
++++ b/Libraries/Network/RCTFileRequestHandler.mm
+@@ -90,6 +90,7 @@ RCT_EXPORT_MODULE()
+     }
+     [delegate URLRequest:weakOp didCompleteWithError:error];
+   }];
++  weakOp = op;
+ 
+   [_fileQueue addOperation:op];
+   return op;

@@ -1,97 +1,71 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Mac Mic Fixer
 
-# Getting Started
+A menu bar app that tells you why your Mac's microphone isn't working, and fixes it in one click.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+It lives in the menu bar, and the icon turns into a crossed-out microphone when the input is muted or broken. Click it to see which device macOS records from, whether that device actually delivers sound, and which apps are using the microphone right now.
 
-## Step 1: Start Metro
+<p>
+  <img src="docs/screenshots/overview.png" alt="Device picker, summary, activity heatmap and level meter" width="400">
+  <img src="docs/screenshots/fixes.png" alt="Apps recording now, permissions and one-click fixes" width="400">
+</p>
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Features
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **Device and sample rate switching:** pick the default input and its sample rate from a chip grid.
+- **Summary:** status, input and output sample rate, volume, channel count and sample format at a glance.
+- **Activity and levels:** a live RMS and peak meter plus a heatmap of the last ~36 seconds, so you can tell "silent" from "quiet" from "clipping".
+- **Volume and mute:** drag the input volume or toggle mute, for devices that support it.
+- **Recording now:** which apps currently hold the microphone open.
+- **Permissions:** whether Mac Mic Fixer has microphone access and, with Full Disk Access, which other apps are allowed to use the microphone (read from the macOS privacy database).
+- **Fixes:** unmute and reset volume, re-select the input device, restart the level meter, restart `coreaudiod`, or open Audio MIDI Setup.
 
-```sh
-# Using npm
-npm start
+### Detected problems
 
-# OR using Yarn
-yarn start
-```
+When something looks wrong, a card with a matching one-click fix appears at the top:
 
-## Step 2: Build and run your app
+| Problem | Fix |
+| --- | --- |
+| No input device, or the device stopped responding | Re-select the device or restart the audio service |
+| Input is muted or its volume is near zero | Unmute and reset volume |
+| The mic delivers pure digital silence | Restart the audio service |
+| No sound detected for a few seconds | Re-select the device |
+| Mac Mic Fixer has no microphone permission | Open Privacy & Security |
+| Bluetooth headset dropped to call quality | Switch to the built-in mic |
+| Input and output sample rates differ | Match the sample rates |
+| Default input is a virtual or aggregate device | Switch to the built-in mic |
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+While the level meter runs, macOS shows the orange microphone indicator, and Bluetooth headsets switch to call mode. Pause the meter to avoid both.
 
-### Android
+## Development
 
-```sh
-# Using npm
-npm run android
+Mac Mic Fixer is a [React Native for macOS](https://microsoft.github.io/react-native-windows/docs/rnm-getting-started) app. The UI is in TypeScript (`App.tsx`, `src/`), and the CoreAudio, TCC and status item code is in Objective-C++ (`macos/MacMicFixer-macOS/`). It uses [Bun](https://bun.sh) as package manager, [Biome](https://biomejs.dev) for linting and formatting, and Jest for tests.
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
+Make sure you have completed the React Native [environment setup](https://reactnative.dev/docs/set-up-your-environment) for macOS (Xcode and CocoaPods), then:
 
 ```sh
-bundle exec pod install
+bun install
+bundle install                         # first time only, installs CocoaPods
+cd macos && bundle exec pod install    # after cloning or changing native deps
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Start Metro, then build and launch the app in a second terminal:
 
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+bun start
+bun run macos
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+You can also build from Xcode via `macos/MacMicFixer.xcworkspace`. The app has no Dock icon; look for the microphone in the menu bar.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+### Checks
 
-## Step 3: Modify your app
+```sh
+bun run lint       # Biome lint + format check
+bun run format     # apply Biome fixes and formatting
+bun run typecheck  # TypeScript
+bun run test       # Jest
+```
 
-Now that you have successfully run the app, let's make changes!
+### Patched dependencies
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+`patches/react-native-macos@0.79.4.patch` (applied automatically by `bun install`) fixes a bug in `RCTDataRequestHandler` and `RCTFileRequestHandler` where a request token was never assigned. Without it, loading `data:` or `file:` URLs logs "Unrecognized request token" errors that open a RedBox over the popover.

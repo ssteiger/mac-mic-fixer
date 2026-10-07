@@ -1,3 +1,22 @@
 {
-  "extends": "@react-native/typescript-config/tsconfig.json"
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "**/Pods/**", "macos/build", "vendor"],
+  "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "customConditions": ["react-native"],
+    "lib": ["ES2022"],
+    "types": ["react-native", "jest"],
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
+  }
 }

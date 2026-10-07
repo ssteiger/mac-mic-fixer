@@ -7,18 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0FA6069BD7BB87BF2B2EDF65 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 460B29DEAEFBAFE7E6C9CAAA /* AVFoundation.framework */; };
 		5142014D2437B4B30078DB4F /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5142014C2437B4B30078DB4F /* AppDelegate.mm */; };
 		514201522437B4B40078DB4F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 514201512437B4B40078DB4F /* Assets.xcassets */; };
 		514201552437B4B40078DB4F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 514201532437B4B40078DB4F /* Main.storyboard */; };
 		514201582437B4B40078DB4F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 514201572437B4B40078DB4F /* main.m */; };
+		5330A164B0AB28C42A81EE15 /* MicDiagnostics.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4497585EF1763AD2A72AD760 /* MicDiagnostics.mm */; };
+		562436FFA256818A4D6FD2C0 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 89E575FAB31EAA3E1985472E /* CoreAudio.framework */; };
 		7ED175A67B0F79B702339804 /* libPods-MacMicFixer-macOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A69970AFE81DF1F333C4EF35 /* libPods-MacMicFixer-macOS.a */; };
+		BF8549633E943FC336231CCE /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E38713736FFF1CEC6F44938 /* libsqlite3.tbd */; };
+		C411553F285903632A8211CE /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C30AE973E137D5E8FA1C023D /* AudioToolbox.framework */; };
 		CB77D0CD22A58A141CDFEC81 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56885AB199A128033A43546A /* PrivacyInfo.xcprivacy */; };
 		F672EB21C1FB11039DA5EC12 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 56885AB199A128033A43546A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		01B346BAB4A50254A69E47AD /* MicDiagnostics.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = MicDiagnostics.h; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* MacMicFixer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacMicFixer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A5295CD9EDFA4CDE66B55CA /* Pods-MacMicFixer-macOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacMicFixer-macOS.release.xcconfig"; path = "Target Support Files/Pods-MacMicFixer-macOS/Pods-MacMicFixer-macOS.release.xcconfig"; sourceTree = "<group>"; };
+		4497585EF1763AD2A72AD760 /* MicDiagnostics.mm */ = {isa = PBXFileReference; includeInIndex = 1; path = MicDiagnostics.mm; sourceTree = "<group>"; };
+		460B29DEAEFBAFE7E6C9CAAA /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/AVFoundation.framework; sourceTree = DEVELOPER_DIR; };
 		514201492437B4B30078DB4F /* MacMicFixer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacMicFixer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5142014B2437B4B30078DB4F /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		5142014C2437B4B30078DB4F /* AppDelegate.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AppDelegate.mm; sourceTree = "<group>"; };
@@ -28,8 +36,11 @@
 		514201572437B4B40078DB4F /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		514201592437B4B40078DB4F /* MacMicFixer.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacMicFixer.entitlements; sourceTree = "<group>"; };
 		56885AB199A128033A43546A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		89E575FAB31EAA3E1985472E /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/CoreAudio.framework; sourceTree = DEVELOPER_DIR; };
+		9E38713736FFF1CEC6F44938 /* libsqlite3.tbd */ = {isa = PBXFileReference; includeInIndex = 1; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		A69970AFE81DF1F333C4EF35 /* libPods-MacMicFixer-macOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MacMicFixer-macOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABBE060C083126BAA55BF5DA /* Pods-MacMicFixer-macOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MacMicFixer-macOS.debug.xcconfig"; path = "Target Support Files/Pods-MacMicFixer-macOS/Pods-MacMicFixer-macOS.debug.xcconfig"; sourceTree = "<group>"; };
+		C30AE973E137D5E8FA1C023D /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk/System/Library/Frameworks/AudioToolbox.framework; sourceTree = DEVELOPER_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -46,6 +57,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				7ED175A67B0F79B702339804 /* libPods-MacMicFixer-macOS.a in Frameworks */,
+				0FA6069BD7BB87BF2B2EDF65 /* AVFoundation.framework in Frameworks */,
+				C411553F285903632A8211CE /* AudioToolbox.framework in Frameworks */,
+				562436FFA256818A4D6FD2C0 /* CoreAudio.framework in Frameworks */,
+				BF8549633E943FC336231CCE /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -57,8 +72,20 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				A69970AFE81DF1F333C4EF35 /* libPods-MacMicFixer-macOS.a */,
+				399A958D04AFE057D19EF293 /* OS X */,
+				9E38713736FFF1CEC6F44938 /* libsqlite3.tbd */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		399A958D04AFE057D19EF293 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				460B29DEAEFBAFE7E6C9CAAA /* AVFoundation.framework */,
+				C30AE973E137D5E8FA1C023D /* AudioToolbox.framework */,
+				89E575FAB31EAA3E1985472E /* CoreAudio.framework */,
+			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
 		5142014A2437B4B30078DB4F /* MacMicFixer-macOS */ = {
@@ -71,6 +98,8 @@
 				514201562437B4B40078DB4F /* Info.plist */,
 				514201572437B4B40078DB4F /* main.m */,
 				514201592437B4B40078DB4F /* MacMicFixer.entitlements */,
+				01B346BAB4A50254A69E47AD /* MicDiagnostics.h */,
+				4497585EF1763AD2A72AD760 /* MicDiagnostics.mm */,
 			);
 			path = "MacMicFixer-macOS";
 			sourceTree = "<group>";
@@ -311,6 +340,7 @@
 			files = (
 				514201582437B4B40078DB4F /* main.m in Sources */,
 				5142014D2437B4B30078DB4F /* AppDelegate.mm in Sources */,
+				5330A164B0AB28C42A81EE15 /* MicDiagnostics.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,11 +406,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "MacMicFixer-macOS/MacMicFixer.entitlements";
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = NO;
 				INFOPLIST_FILE = "MacMicFixer-macos/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -400,10 +431,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "MacMicFixer-macOS/MacMicFixer.entitlements";
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = "MacMicFixer-macos/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 11.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
