@@ -1,6 +1,7 @@
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Button } from "./src/components/Button";
 import { DevicePicker, transportLabel } from "./src/components/DevicePicker";
 import { type FixAction, FixActions } from "./src/components/FixActions";
 import { InUseList } from "./src/components/InUseList";
@@ -14,6 +15,7 @@ import { Section } from "./src/components/Section";
 import { StatusHeader } from "./src/components/StatusHeader";
 import { Summary } from "./src/components/Summary";
 import { VolumeControl } from "./src/components/VolumeControl";
+import { fixMicrophone } from "./src/fixMicrophone";
 import { computeHealth, type FixId } from "./src/health";
 import { useActionRunner } from "./src/hooks/useActionRunner";
 import { useLevelMeter } from "./src/hooks/useLevelMeter";
@@ -92,11 +94,24 @@ function App(): React.JSX.Element {
   const restartAudio = useCallback(
     () =>
       run("restartCoreAudio", async () => {
-        await MicDiagnostics.restartCoreAudio();
+        await MicDiagnostics.restartCoreAudio(false);
         await refreshAll();
         return "The audio service was restarted.";
       }),
     [run, refreshAll],
+  );
+
+  const fixMic = useCallback(
+    () =>
+      run("fixMic", async () => {
+        const result = await fixMicrophone();
+        await refreshAll();
+        if (!meterPaused) {
+          await meter.restart();
+        }
+        return result;
+      }),
+    [run, refreshAll, meter.restart, meterPaused],
   );
 
   const runFix = useCallback(
@@ -178,7 +193,7 @@ function App(): React.JSX.Element {
       id: "restartCoreAudio",
       title: "Restart the audio service",
       description:
-        'Restarts coreaudiod, which fixes most "no input" problems. Asks for your password; sound in all apps drops for a few seconds.',
+        'Restarts coreaudiod, which fixes most "no input" problems. Asks for Touch ID (your password the first time); sound in all apps drops for a few seconds.',
       button: "Restart",
       onPress: restartAudio,
     },
@@ -209,6 +224,21 @@ function App(): React.JSX.Element {
           onOpenSoundSettings={() => openURL(SettingsURLs.soundInput)}
           onQuit={() => MicDiagnostics.quit()}
         />
+
+        <View style={styles.fixMic}>
+          <Button
+            title="Fix my mic"
+            kind="primary"
+            busy={busy === "fixMic"}
+            disabled={busy !== null}
+            onPress={fixMic}
+            style={styles.fixMicButton}
+          />
+          <MonoText style={styles.fixMicHint}>
+            Restarts audio, selects the built-in mic and unmutes it. Uses Touch
+            ID after a one-time password prompt.
+          </MonoText>
+        </View>
 
         {message && (
           <MonoText
@@ -346,6 +376,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
+  },
+  fixMic: {
+    gap: 6,
+    paddingBottom: 14,
+  },
+  fixMicButton: {
+    paddingVertical: 9,
+  },
+  fixMicHint: {
+    fontSize: 10,
+    lineHeight: 14,
+    color: colors.textMuted,
   },
   message: {
     fontSize: 11,

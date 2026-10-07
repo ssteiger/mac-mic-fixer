@@ -11,6 +11,7 @@ It lives in the menu bar, and the icon turns into a crossed-out microphone when 
 
 ## Features
 
+- **Fix my mic:** one button at the top that resets the input after a call app (Slack, Zoom, Teams, ...) left it crackling or silent. It disables the Background Music driver if it is installed, restarts `coreaudiod`, selects the built-in mic at 48 kHz and unmutes it.
 - **Device and sample rate switching:** pick the default input and its sample rate from a chip grid.
 - **Summary:** status, input and output sample rate, volume, channel count and sample format at a glance.
 - **Activity and levels:** a live RMS and peak meter plus a heatmap of the last ~36 seconds, so you can tell "silent" from "quiet" from "clipping".
@@ -33,6 +34,16 @@ When something looks wrong, a card with a matching one-click fix appears at the 
 | Bluetooth headset dropped to call quality | Switch to the built-in mic |
 | Input and output sample rates differ | Match the sample rates |
 | Default input is a virtual or aggregate device | Switch to the built-in mic |
+
+### Touch ID for audio restarts
+
+Restarting `coreaudiod` needs root. The first restart asks for your admin password and installs a small helper, `/Library/PrivilegedHelperTools/com.macmicfixer.reset-audio`, plus a sudoers rule, `/etc/sudoers.d/mac-mic-fixer`, that lets your user run it without a password. After that, Mac Mic Fixer asks for Touch ID (or your Apple Watch) before each restart. The helper can only quit `coreaudiod` and move the Background Music driver to `/Library/Audio/Plug-Ins/Disabled by Mac Mic Fixer`. The Touch ID check happens in the app, so any program running as your user could restart the audio service without asking.
+
+To remove the helper:
+
+```sh
+sudo rm /etc/sudoers.d/mac-mic-fixer /Library/PrivilegedHelperTools/com.macmicfixer.reset-audio
+```
 
 While the level meter runs, macOS shows the orange microphone indicator, and Bluetooth headsets switch to call mode. Pause the meter to avoid both.
 

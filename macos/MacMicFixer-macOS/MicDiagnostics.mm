@@ -3,6 +3,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <AppKit/AppKit.h>
 #import <CoreAudio/CoreAudio.h>
+#import <LocalAuthentication/LocalAuthentication.h>
 #import <ctype.h>
 #import <fcntl.h>
 #import <libproc.h>
@@ -606,6 +607,113 @@ void RunTask(NSString *launchPath, NSArray<NSString *> *arguments, void (^comple
   }
 }
 
+NSString *ShellQuoted(NSString *value)
+{
+  return [NSString stringWithFormat:@"'%@'", [value stringByReplacingOccurrencesOfString:@"'" withString:@"'\\''"]];
+}
+
+NSString *AppleScriptQuoted(NSString *value)
+{
+  NSString *escaped = [[value stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"]
+      stringByReplacingOccurrencesOfString:@"\""
+                                withString:@"\\\""];
+  return [NSString stringWithFormat:@"\"%@\"", escaped];
+}
+
+#pragma mark - Audio reset helper
+
+// Root-owned script that sudo runs without a password (see kSudoersPath), so the app can gate it with Touch ID
+// instead of the admin password dialog. It must not act on anything the caller controls beyond the one flag.
+// Disabled drivers move outside HAL/, where coreaudiod no longer loads them but they are easy to restore.
+NSString *const kResetAudioScript = @R"(#!/bin/sh
+# Installed by Mac Mic Fixer. Runs as root via sudo without a password.
+set -eu
+PATH=/usr/bin:/bin:/usr/sbin:/sbin
+case "${1-}" in
+"") ;;
+--disable-conflicting-drivers)
+  hal="/Library/Audio/Plug-Ins/HAL"
+  disabled="/Library/Audio/Plug-Ins/Disabled by Mac Mic Fixer"
+  for name in "Background Music Device.driver" "BGMDriver.driver"; do
+    if [ -e "$hal/$name" ]; then
+      mkdir -p "$disabled"
+      rm -rf "$disabled/$name"
+      mv "$hal/$name" "$disabled/$name"
+      echo "$name"
+    fi
+  done
+  ;;
+*)
+  echo "usage: $0 [--disable-conflicting-drivers]" >&2
+  exit 64
+  ;;
+esac
+killall coreaudiod
+)";
+NSString *const kResetAudioHelperPath = @"/Library/PrivilegedHelperTools/com.macmicfixer.reset-audio";
+NSString *const kSudoersPath = @"/etc/sudoers.d/mac-mic-fixer";
+NSString *const kDisableDriversFlag = @"--disable-conflicting-drivers";
+
+// Also false when an older app version installed a different script, so the password path reinstalls it.
+BOOL ResetAudioHelperInstalled()
+{
+  NSString *installed = [NSString stringWithContentsOfFile:kResetAudioHelperPath encoding:NSUTF8StringEncoding error:nil];
+  return [installed isEqualToString:kResetAudioScript] &&
+      [[NSFileManager defaultManager] fileExistsAtPath:kSudoersPath];
+}
+
+// Shell commands, run as root, that install the helper and its sudoers rule for the current user.
+NSArray<NSString *> *InstallResetAudioHelperCommands()
+{
+  NSString *user = NSUserName();
+  NSCharacterSet *invalid =
+      [[NSCharacterSet characterSetWithCharactersInString:
+                           @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_"] invertedSet];
+  if (user.length == 0 || [user rangeOfCharacterFromSet:invalid].location != NSNotFound) {
+    return @[];
+  }
+  NSString *rule = [NSString stringWithFormat:
+                                 @"# Installed by Mac Mic Fixer: lets %@ restart the audio service without a password.\n"
+                                 @"%@ ALL=(root) NOPASSWD: %@\n",
+                                 user, user, kResetAudioHelperPath];
+  // sudo ignores files in sudoers.d whose name contains a dot, so the rule is inert until visudo accepts it.
+  NSString *helperTemp = [kResetAudioHelperPath stringByAppendingString:@".tmp"];
+  NSString *sudoersTemp = [kSudoersPath stringByAppendingString:@".tmp"];
+  return @[
+    @"umask 022",
+    [NSString stringWithFormat:@"/usr/bin/printf %%s %@ > %@", ShellQuoted(kResetAudioScript), ShellQuoted(helperTemp)],
+    [NSString stringWithFormat:@"/usr/sbin/chown root:wheel %@", ShellQuoted(helperTemp)],
+    [NSString stringWithFormat:@"/bin/chmod 755 %@", ShellQuoted(helperTemp)],
+    [NSString stringWithFormat:@"/bin/mv -f %@ %@", ShellQuoted(helperTemp), ShellQuoted(kResetAudioHelperPath)],
+    [NSString stringWithFormat:@"/usr/bin/printf %%s %@ > %@", ShellQuoted(rule), ShellQuoted(sudoersTemp)],
+    [NSString stringWithFormat:@"/usr/sbin/chown root:wheel %@", ShellQuoted(sudoersTemp)],
+    [NSString stringWithFormat:@"/bin/chmod 440 %@", ShellQuoted(sudoersTemp)],
+    [NSString stringWithFormat:@"/usr/sbin/visudo -cqf %@", ShellQuoted(sudoersTemp)],
+    [NSString stringWithFormat:@"/bin/mv -f %@ %@", ShellQuoted(sudoersTemp), ShellQuoted(kSudoersPath)],
+  ];
+}
+
+NSArray<NSString *> *OutputLines(NSString *output)
+{
+  NSMutableArray<NSString *> *lines = [NSMutableArray new];
+  for (NSString *line in [output componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]]) {
+    if (line.length > 0) {
+      [lines addObject:line];
+    }
+  }
+  return lines;
+}
+
+void QuitConflictingDriverApps()
+{
+  dispatch_sync(dispatch_get_main_queue(), ^{
+    for (NSRunningApplication *app in
+         [NSRunningApplication runningApplicationsWithBundleIdentifier:@"com.bearisdriving.BGM.App"]) {
+      [app terminate];
+    }
+  });
+}
+
 double ToDecibels(double amplitude)
 {
   return amplitude > 0 ? std::max(20 * std::log10(amplitude), kLevelFloorDb) : kLevelFloorDb;
@@ -1160,12 +1268,102 @@ RCT_EXPORT_METHOD(stopLevelMeter : (RCTPromiseResolveBlock)resolve reject : (RCT
 
 #pragma mark - Fixes
 
-RCT_EXPORT_METHOD(restartCoreAudio : (RCTPromiseResolveBlock)resolve reject : (RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(restartCoreAudio
+                  : (BOOL)disableConflictingDrivers resolve
+                  : (RCTPromiseResolveBlock)resolve reject
+                  : (RCTPromiseRejectBlock)reject)
 {
-  NSString *script =
-      @"do shell script \"/usr/bin/killall coreaudiod\" "
-      @"with prompt \"Mac Mic Fixer wants to restart the macOS audio service (coreaudiod).\" "
-      @"with administrator privileges";
+  if (disableConflictingDrivers) {
+    QuitConflictingDriverApps();
+  }
+  NSArray<NSString *> *arguments = disableConflictingDrivers ? @[ kDisableDriversFlag ] : @[];
+  if (ResetAudioHelperInstalled()) {
+    [self restartCoreAudioWithTouchID:arguments resolve:resolve reject:reject];
+  } else {
+    [self restartCoreAudioWithPassword:arguments resolve:resolve reject:reject];
+  }
+}
+
+// Prefers the Touch ID–only sheet; the macOS password dialog only appears via "Use Password…" or without Touch ID.
+- (void)authenticate:(NSString *)reason completion:(void (^)(BOOL success, NSError *error))completion
+{
+  LAContext *context = [LAContext new];
+  LAPolicy biometrics = LAPolicyDeviceOwnerAuthenticationWithBiometricsOrWatch;
+  if (![context canEvaluatePolicy:biometrics error:nil]) {
+    [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication localizedReason:reason reply:completion];
+    return;
+  }
+  context.localizedFallbackTitle = @"Use Password…";
+  [context evaluatePolicy:biometrics
+          localizedReason:reason
+                    reply:^(BOOL success, NSError *error) {
+                      if (!success && error.code == LAErrorUserFallback) {
+                        [[LAContext new] evaluatePolicy:LAPolicyDeviceOwnerAuthentication
+                                        localizedReason:reason
+                                                  reply:completion];
+                        return;
+                      }
+                      completion(success, error);
+                    }];
+}
+
+- (void)restartCoreAudioWithTouchID:(NSArray<NSString *> *)arguments
+                            resolve:(RCTPromiseResolveBlock)resolve
+                             reject:(RCTPromiseRejectBlock)reject
+{
+  [self authenticate:@"restart the macOS audio service"
+          completion:^(BOOL success, NSError *error) {
+            dispatch_async(self->_queue, ^{
+              if (!success) {
+                BOOL cancelled = error.code == LAErrorUserCancel || error.code == LAErrorAppCancel ||
+                    error.code == LAErrorSystemCancel;
+                reject(
+                    cancelled ? @"cancelled" : @"auth_failed",
+                    cancelled ? @"Restart cancelled." : error.localizedDescription,
+                    error);
+                return;
+              }
+              NSArray<NSString *> *sudoArguments =
+                  [@[ @"-n", kResetAudioHelperPath ] arrayByAddingObjectsFromArray:arguments];
+              RunTask(@"/usr/bin/sudo", sudoArguments, ^(int status, NSString *output) {
+                dispatch_async(self->_queue, ^{
+                  if (status == 0) {
+                    [self finishCoreAudioRestart:output resolve:resolve];
+                  } else if ([output containsString:@"password is required"]) {
+                    // The sudoers rule is gone; reinstall it with the admin password.
+                    [self restartCoreAudioWithPassword:arguments resolve:resolve reject:reject];
+                  } else {
+                    reject(@"restart_failed", output.length > 0 ? output : @"Restarting coreaudiod failed.", nil);
+                  }
+                });
+              });
+            });
+          }];
+}
+
+// Installs the helper (so later restarts can use Touch ID) and runs it, behind one admin password prompt.
+- (void)restartCoreAudioWithPassword:(NSArray<NSString *> *)arguments
+                             resolve:(RCTPromiseResolveBlock)resolve
+                              reject:(RCTPromiseRejectBlock)reject
+{
+  NSMutableArray<NSString *> *commands = [InstallResetAudioHelperCommands() mutableCopy];
+  BOOL installing = commands.count > 0;
+  NSMutableArray<NSString *> *run = [@[ installing ? kResetAudioHelperPath : @"/bin/sh -c " ] mutableCopy];
+  if (!installing) {
+    [run addObject:[ShellQuoted(kResetAudioScript) stringByAppendingString:@" sh"]];
+  }
+  for (NSString *argument in arguments) {
+    [run addObject:ShellQuoted(argument)];
+  }
+  [commands addObject:[run componentsJoinedByString:@" "]];
+
+  NSString *prompt = installing
+      ? @"Mac Mic Fixer wants to restart the macOS audio service (coreaudiod) and set up Touch ID for future restarts."
+      : @"Mac Mic Fixer wants to restart the macOS audio service (coreaudiod).";
+  NSString *script = [NSString
+      stringWithFormat:@"do shell script %@ with prompt %@ with administrator privileges without altering line endings",
+                       AppleScriptQuoted([commands componentsJoinedByString:@" && "]),
+                       AppleScriptQuoted(prompt)];
   RunTask(@"/usr/bin/osascript", @[ @"-e", script ], ^(int status, NSString *output) {
     dispatch_async(self->_queue, ^{
       if (status != 0) {
@@ -1176,12 +1374,18 @@ RCT_EXPORT_METHOD(restartCoreAudio : (RCTPromiseResolveBlock)resolve reject : (R
             nil);
         return;
       }
-      // launchd relaunches coreaudiod right away; give it a moment before reading the hardware again.
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), self->_queue, ^{
-        [self refreshAfterAudioServiceRestart];
-        resolve(nil);
-      });
+      [self finishCoreAudioRestart:output resolve:resolve];
     });
+  });
+}
+
+// Resolves with the drivers the helper disabled, which it prints one per line.
+- (void)finishCoreAudioRestart:(NSString *)output resolve:(RCTPromiseResolveBlock)resolve
+{
+  // launchd relaunches coreaudiod right away; give it a moment before reading the hardware again.
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), _queue, ^{
+    [self refreshAfterAudioServiceRestart];
+    resolve(OutputLines(output));
   });
 }
 

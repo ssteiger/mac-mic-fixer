@@ -117,7 +117,11 @@ interface MicDiagnosticsModule {
   startLevelMeter(): Promise<void>;
   stopLevelMeter(): Promise<void>;
   resetLevelMeter(): Promise<void>;
-  restartCoreAudio(): Promise<void>;
+  /**
+   * Asks for the admin password the first time (installing a helper), then
+   * for Touch ID. Resolves with the file names of the drivers it disabled.
+   */
+  restartCoreAudio(disableConflictingDrivers: boolean): Promise<string[]>;
   reselectDefaultInput(): Promise<void>;
   resetInputVolume(): Promise<{ unmuted: boolean; volumeSet: boolean }>;
   openAudioMidiSetup(): Promise<void>;
