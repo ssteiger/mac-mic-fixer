@@ -9,6 +9,18 @@ It lives in the menu bar, and the icon turns into a crossed-out microphone when 
   <img src="docs/screenshots/fixes.png" alt="Apps recording now, permissions and one-click fixes" width="400">
 </p>
 
+## Install
+
+Download `MacMicFixer-<version>.dmg` from the [latest release](https://github.com/ssteiger/mac-mic-fixer/releases/latest), open it and drag MacMicFixer to Applications. It runs on macOS 14 or later, on Apple Silicon and Intel.
+
+The app is not notarized by Apple, so macOS blocks the first launch. Open System Settings > Privacy & Security, scroll down and click "Open Anyway" next to the message about MacMicFixer. Alternatively, run:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/MacMicFixer.app
+```
+
+Because each release has a new ad-hoc signature, macOS asks for microphone access (and forgets Full Disk Access) again after every update.
+
 ## Features
 
 - **Fix my mic:** one button at the top that resets the input after a call app (Slack, Zoom, Teams, ...) left it crackling or silent. It disables the Background Music driver if it is installed, restarts `coreaudiod`, selects the built-in mic at 48 kHz and unmutes it.
@@ -76,6 +88,17 @@ bun run format     # apply Biome fixes and formatting
 bun run typecheck  # TypeScript
 bun run test       # Jest
 ```
+
+### Releasing
+
+Push a version tag and GitHub Actions (`.github/workflows/release.yml`) runs the checks, builds a universal DMG and publishes it as a GitHub release:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+To build the same DMG locally, run `scripts/build-release.sh 0.1.0`. It writes `build/release/MacMicFixer-0.1.0.dmg`.
 
 ### Patched dependencies
 

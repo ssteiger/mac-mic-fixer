@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  release:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile
+          cd macos && bundle exec pod install
+
+      - name: Check
+        run: |
+          bun run lint
+          bun run typecheck
+          bun run test
+
+      - name: Build
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: scripts/build-release.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" "build/release/MacMicFixer-$VERSION.dmg" \
+            --title "Mac Mic Fixer $VERSION" \
+            --generate-notes \
+            --notes "Open the DMG and drag MacMicFixer to Applications. The app is not notarized: on first launch, open System Settings > Privacy & Security and click \"Open Anyway\"."
