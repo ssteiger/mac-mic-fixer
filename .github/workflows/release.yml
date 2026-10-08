@@ -3,6 +3,11 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # Builds the DMG as a workflow artifact without publishing a release.
+  workflow_dispatch:
+
+env:
+  HOMEBREW_NO_AUTO_UPDATE: "1"
 
 jobs:
   release:
@@ -21,6 +26,23 @@ jobs:
           ruby-version: "3.1"
           bundler-cache: true
 
+      - name: Set up ccache
+        run: |
+          command -v ccache || brew install ccache
+          echo "CCACHE_DIR=$HOME/.ccache" >> "$GITHUB_ENV"
+
+      # A new key on every run saves the updated cache; restore-keys picks up the latest one.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}
+          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+
+      - uses: actions/cache@v4
+        with:
+          path: macos/Pods
+          key: pods-${{ runner.os }}-${{ hashFiles('macos/Podfile.lock', 'bun.lock') }}
+
       - name: Install dependencies
         run: |
           bun install --frozen-lockfile
@@ -35,14 +57,28 @@ jobs:
       - name: Build
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-        run: scripts/build-release.sh "${GITHUB_REF_NAME#v}"
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.0.0-dev.$GITHUB_RUN_NUMBER"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          scripts/build-release.sh "$VERSION"
+
+      - name: Upload artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacMicFixer-${{ env.VERSION }}
+          path: build/release/MacMicFixer-${{ env.VERSION }}.dmg
 
       - name: Publish release
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           gh release create "$GITHUB_REF_NAME" "build/release/MacMicFixer-$VERSION.dmg" \
             --title "Mac Mic Fixer $VERSION" \
             --generate-notes \
-            --notes "Open the DMG and drag MacMicFixer to Applications. The app is not notarized: on first launch, open System Settings > Privacy & Security and click \"Open Anyway\"."
+            --notes "Requires a Mac with Apple Silicon. Open the DMG and drag MacMicFixer to Applications. The app is not notarized: on first launch, open System Settings > Privacy & Security and click \"Open Anyway\"."

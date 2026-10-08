@@ -11,7 +11,7 @@ It lives in the menu bar, and the icon turns into a crossed-out microphone when 
 
 ## Install
 
-Download `MacMicFixer-<version>.dmg` from the [latest release](https://github.com/ssteiger/mac-mic-fixer/releases/latest), open it and drag MacMicFixer to Applications. It runs on macOS 14 or later, on Apple Silicon and Intel.
+Download `MacMicFixer-<version>.dmg` from the [latest release](https://github.com/ssteiger/mac-mic-fixer/releases/latest), open it and drag MacMicFixer to Applications. It runs on Macs with Apple Silicon and macOS 14 or later.
 
 The app is not notarized by Apple, so macOS blocks the first launch. Open System Settings > Privacy & Security, scroll down and click "Open Anyway" next to the message about MacMicFixer. Alternatively, run:
 
@@ -91,14 +91,16 @@ bun run test       # Jest
 
 ### Releasing
 
-Push a version tag and GitHub Actions (`.github/workflows/release.yml`) runs the checks, builds a universal DMG and publishes it as a GitHub release:
+Push a version tag and GitHub Actions (`.github/workflows/release.yml`) runs the checks, builds an Apple Silicon DMG and publishes it as a GitHub release:
 
 ```sh
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-To build the same DMG locally, run `scripts/build-release.sh 0.1.0`. It writes `build/release/MacMicFixer-0.1.0.dmg`.
+To build the same DMG locally, run `scripts/build-release.sh 0.1.0`. It writes `build/release/MacMicFixer-0.1.0.dmg`. To build without publishing, run the workflow manually (`gh workflow run release.yml`); the DMG is attached to the run as an artifact.
+
+CI compiles through [ccache](https://ccache.dev) and caches it, together with `macos/Pods`, between runs, so only changed files are recompiled. The build script uses ccache locally too if it is installed (`brew install ccache`).
 
 ### Patched dependencies
 

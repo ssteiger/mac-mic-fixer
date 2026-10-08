@@ -1,0 +1,3 @@
+#!/bin/sh
+export CCACHE_CONFIGPATH="${CCACHE_CONFIGPATH:-$(dirname "$0")/ccache.conf}"
+exec ccache clang++ "$@"

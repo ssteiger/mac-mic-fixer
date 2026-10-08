@@ -1,9 +1,9 @@
 #!/bin/sh
-# Builds an unsigned (ad-hoc signed) universal Release build and packages it as a DMG.
+# Builds an unsigned (ad-hoc signed) Apple Silicon Release build and packages it as a DMG.
 #
 #   scripts/build-release.sh 1.2.0          -> build/release/MacMicFixer-1.2.0.dmg
 #
-# Expects `bun install` and `pod install` (in macos/) to have run.
+# Expects `bun install` and `pod install` (in macos/) to have run. Compiles through ccache when it is installed.
 set -eu
 
 VERSION="${1:?usage: scripts/build-release.sh <version>}"
@@ -16,6 +16,13 @@ OUT="$BUILD/release"
 APP="$DERIVED/Build/Products/Release/MacMicFixer.app"
 DMG="$OUT/MacMicFixer-$VERSION.dmg"
 
+set --
+if command -v ccache > /dev/null; then
+  CCACHE="$ROOT/scripts/ccache"
+  set -- CC="$CCACHE/clang" LD="$CCACHE/clang" CXX="$CCACHE/clang++" LDPLUSPLUS="$CCACHE/clang++"
+  ccache --zero-stats > /dev/null
+fi
+
 rm -rf "$DERIVED" "$OUT"
 mkdir -p "$OUT"
 
@@ -25,14 +32,19 @@ xcodebuild \
   -configuration Release \
   -derivedDataPath "$DERIVED" \
   -destination "generic/platform=macOS" \
-  ARCHS="arm64 x86_64" \
+  ARCHS=arm64 \
   ONLY_ACTIVE_ARCH=NO \
   MARKETING_VERSION="$VERSION" \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   CODE_SIGN_IDENTITY="-" \
   CODE_SIGN_STYLE=Manual \
   DEVELOPMENT_TEAM="" \
+  "$@" \
   build
+
+if [ $# -gt 0 ]; then
+  ccache --show-stats
+fi
 
 codesign --verify --deep --strict "$APP"
 lipo -archs "$APP/Contents/MacOS/MacMicFixer"
